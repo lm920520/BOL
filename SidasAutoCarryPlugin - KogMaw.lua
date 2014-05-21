@@ -362,7 +362,8 @@ end
 function CastVIPQ(unit)
 	VipPredTarget = qp:GetPrediction(Target)
 	if qRDY and ValidTarget(unit) and myHero.mana >= ManaCost(Q) and VipPredTarget then
-		local willCollide = Collision(qRNG, qSPD, qDLY, qWTH)
+		local QColl = (Collision(qRNG, qSPD, qDLY, qWTH))
+		local willCollide = QColl:GetMinionCollision(unit, myHero)
 		if not willCollide and GetDistance(unit) <= qRNG then
 			CastSpell(_Q, VipPredTarget.x, VipPredTarget.z)
 		end
