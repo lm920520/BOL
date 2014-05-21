@@ -1,3 +1,24 @@
+--[[
+╔╦╗┌─┐┌─┐┌┬┐┬ ┬ ┬  ╦╔═┌─┐┌─┐╔╦╗┌─┐┬ ┬
+ ║║├┤ ├─┤ │││ └┬┘  ╠╩╗│ ││ ┬║║║├─┤│││
+═╩╝└─┘┴ ┴─┴┘┴─┘┴   ╩ ╩└─┘└─┘╩ ╩┴ ┴└┴┘
+┌┐ ┬ ┬  ╔═╗╔═╗╔═╗╔╗╔╔╗╔              
+├┴┐└┬┘  ║  ║  ║ ║║║║║║║              
+└─┘ ┴   ╚═╝╚═╝╚═╝╝╚╝╝╚╝              
+
+VERSION:	1.00
+
+CHANGELOG:	VERSION 1.00
+				Initial Release
+				
+		Follow me on Facebook! Its the easiest way to communicate with me.
+		CCONN's Facebook: https://www.facebook.com/CCONN81
+		
+		Like the script and want to donate?
+		All donations go towards purchasing additional scripts and premium time so I can script more for you guys.
+		CCONN's DONATE LINK: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JTWL7DK86V56S
+--]]
+
 if myHero.charName ~= "KogMaw" then return end
 
 --[[
