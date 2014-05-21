@@ -25,7 +25,11 @@ local ProdictQ = Prodict:AddProdictionObject(_Q, qRNG, qSPD, qDLY, qWTH)
 local ProdictE = Prodict:AddProdictionObject(_E, eRNG, eSPD, eDLY, eWTH)
 local ProdictR = Prodict:AddProdictionObject(_R, rRNG, rSPD, rDLY, rWTH)
 local ProdictQFastCol = FastCol(ProdictQ)
---TODO Add normal collision variable
+local ProdictQCol = Collision(qRNG, qSPD, qDLY, qWTH)
+local VipPredTarget
+local qp = TargetPredictionVIP(qRNG, qSPD, qDLY, qWTH)
+local ep = TargetPredictionVIP(eRNG, eSPD, eDLY, eWTH)
+local rp = TargetPredictionVIP(rRNG, rSPD, rDLY, rWTH)
 local stacks, timer = 0, 0
 local VP = VPrediction()
 local Version = 1.00
@@ -190,7 +194,6 @@ end
   ]]
   
 --TODO Add all permutations for kill steals
---TODO Add VIP Prediction kill steals
 --TODO Add mana thresholds and overrides
 function KillSteal()
 	for i = 1, heroManager.iCount do
@@ -200,14 +203,17 @@ function KillSteal()
 		if qRDY and Menu1.Q and ValidTarget(enemy, qRNG) and enemy.health < getDmg("Q",enemy,myHero) and myHero.mana >= ManaCost(Q) then
 			if Menu2.qoptions.QPrediction == 1 then CastVPredQ(enemy) end
 			if Menu2.qoptions.QPrediction == 2 then CastProdQ(enemy) end
+			if Menu2.qoptions.QPrediction == 3 then CastVIPQ(enemy) end
 		end
 		if eRDY and Menu1.E and ValidTarget(enemy, eRNG) and enemy.health < getDmg("E",enemy,myHero) and myHero.mana >= ManaCost(E) then
 			if Menu2.eoptions.EPrediction == 1 then CastVPredE(enemy) end
 			if Menu2.eoptions.EPrediction == 2 then CastProdE(enemy) end
+			if Menu2.eoptions.EPrediction == 3 then CastVIPE(enemy) end
 		end
 		if rRDY and Menu1.R and ValidTarget(enemy, rRNG) and enemy.health < getDmg("R",enemy,myHero) and myHero.mana >= ManaCost(R) then
 			if Menu2.roptions.RPrediction == 1 then CastVPredR(enemy) end
 			if Menu2.roptions.RPrediction == 2 then CastProdR(enemy) end
+			if Menu2.roptions.RPrediction == 3 then CastVIPR(enemy) end
 		end
 	end
 end
@@ -217,7 +223,6 @@ end
 		holding the AutoCarry hotkey
   ]]
   --TODO Add spell casting order
-  --TODO add VIP Prediction
 function ComboAC()
 	local Menu1 = AutoCarry.PluginMenu.autocarry
 	local Menu2 = AutoCarry.PluginMenu.spelloptions
@@ -231,18 +236,21 @@ function ComboAC()
 			if myHero.mana >= myHero.maxMana * (Menu2.eoptions.EMANA / 100) then
 				if Menu2.eoptions.EPrediction == 1 then CastVPredE(Target) end
 				if Menu2.eoptions.EPrediction == 2 then CastProdE(Target) end
+				if Menu2.eoptions.EPrediction == 3 then CastVIPE(Target) end
 			end
 		end
 		if rRDY and Menu1.ACuseR and GetDistance(Target) <= GetRRange() then 
 			if myHero.mana >= myHero.maxMana * (Menu2.roptions.RMANA / 100) then
 				if Menu2.roptions.RPrediction == 1 then CastVPredR(Target) end
 				if Menu2.roptions.RPrediction == 2 then CastProdR(Target) end
+				if Menu2.roptions.RPrediction == 3 then CastVIPR(Target) end
 			end
 		end
 		if qRDY and Menu1.ACuseQ and GetDistance(Target) <= qRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.qoptions.QMANA / 100) then
 				if Menu2.qoptions.QPrediction == 1 then CastVPredQ(Target) end
 				if Menu2.qoptions.QPrediction == 2 then CastProdQ(Target) end
+				if Menu2.qoptions.QPrediction == 3 then CastVIPQ(Target) end
 			end
 		end
 	end
@@ -253,7 +261,6 @@ end
 		holding the Mixed Mode hotkey
   ]]
   --TODO Add spell casting order
-  --TODO Add VIP Prediction
 function ComboMM()
 	local Menu1 = AutoCarry.PluginMenu.mixedmode
 	local Menu2 = AutoCarry.PluginMenu.spelloptions
@@ -267,18 +274,21 @@ function ComboMM()
 			if myHero.mana >= myHero.maxMana * (Menu2.eoptions.EMANA / 100) then
 				if Menu2.eoptions.EPrediction == 1 then CastVPredE(Target) end
 				if Menu2.eoptions.EPrediction == 2 then CastProdE(Target) end
+				if Menu2.eoptions.EPrediction == 3 then CastVIPE(Target) end
 			end
 		end
 		if rRDY and Menu1.MMuseR and GetDistance(Target) <= rRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.roptions.RMANA / 100) then
 				if Menu2.roptions.RPrediction == 1 then CastVPredR(Target) end
 				if Menu2.roptions.RPrediction == 2 then CastProdR(Target) end
+				if Menu2.roptions.RPrediction == 3 then CastVIPR(Target) end
 			end
 		end
 		if qRDY and Menu1.MMuseQ and GetDistance(Target) <= qRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.qoptions.QMANA / 100) then
 				if Menu2.qoptions.QPrediction == 1 then CastVPredQ(Target) end
 				if Menu2.qoptions.QPrediction == 2 then CastProdQ(Target) end
+				if Menu2.qoptions.QPrediction == 3 then CastVIPQ(Target) end
 			end
 		end
 	end
@@ -289,7 +299,6 @@ end
 		holding the Lane Clear hotkey
   ]]
   --TODO Add spell casting order
-  --TODO Add VIP Prediction
 function ComboLC()
 	local Menu1 = AutoCarry.PluginMenu.laneclear
 	local Menu2 = AutoCarry.PluginMenu.spelloptions
@@ -303,18 +312,21 @@ function ComboLC()
 			if myHero.mana >= myHero.maxMana * (Menu2.eoptions.EMANA / 100) then
 				if Menu2.eoptions.EPrediction == 1 then CastVPredE(Target) end
 				if Menu2.eoptions.EPrediction == 2 then CastProdE(Target) end
+				if Menu2.eoptions.EPrediction == 3 then CastVIPE(Target) end
 			end
 		end
 		if rRDY and Menu1.LCuseR and GetDistance(Target) <= rRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.roptions.RMANA / 100) then
 				if Menu2.roptions.RPrediction == 1 then CastVPredR(Target) end
 				if Menu2.roptions.RPrediction == 2 then CastProdR(Target) end
+				if Menu2.roptions.RPrediction == 3 then CastVIPR(Target) end
 			end
 		end
 		if qRDY and Menu1.LCuseQ and GetDistance(Target) <= qRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.qoptions.QMANA / 100) then
 				if Menu2.qoptions.QPrediction == 1 then CastVPredQ(Target) end
 				if Menu2.qoptions.QPrediction == 2 then CastProdQ(Target) end
+				if Menu2.qoptions.QPrediction == 3 then CastVIPQ(Target) end
 			end
 		end
 	end
@@ -325,8 +337,13 @@ function CastProdQ(unit)
 	if qRDY and ValidTarget(unit) and myHero.mana >= ManaCost(Q) then
 		QPos = ProdictQ:GetPrediction(unit)
 		if QPos ~= nil then
-			local willCollide = ProdictQFastCol:GetMinionCollision(QPos, myHero)
-			if not willCollide then CastSpell(_Q, QPos.x, QPos.z) end
+			if AutoCarry.PluginMenu.spelloptions.qoptions.QCollision == 1 then
+				local willCollide = ProdictQFastCol:GetMinionCollision(QPos, myHero)
+				if not willCollide then CastSpell(_Q, QPos.x, QPos.z) end
+			elseif AutoCarry.PluginMenu.spelloptions.qoptions.QCollision == 2 then
+				local willCollide = ProdictQCol:GetMinionCollision(QPos, myHero)
+				if not willCollide then CastSpell(_Q, Qpos.x, QPos.z) end
+			end
 		end
 	end
 end
@@ -341,10 +358,15 @@ function CastVPredQ(unit)
 	end
 end
 
---TODO add VIP Prediction Q
 --TODO add hitboxes
 function CastVIPQ(unit)
-
+	VipPredTarget = qp:GetPrediction(Target)
+	if qRDY and ValidTarget(unit) and myHero.mana >= ManaCost(Q) and VipPredTarget then
+		local willCollide = Collision(qRNG, qSPD, qDLY, qWTH)
+		if not willCollide and GetDistance(unit) <= qRNG then
+			CastSpell(_Q, VipPredTarget.x, VipPredTarget.z)
+		end
+	end
 end
 
 function CastW(unit)
@@ -373,10 +395,14 @@ function CastVPredE(unit)
 	end
 end
 
---TODO add VIP Prediction E
 --TODO add hitboxes
 function CastVIPE(unit)
-
+	VipPredTarget = ep:GetPrediction(unit)
+	if eRDY and ValidTarget(unit) and myHero.mana >= ManaCost(E) and VipPredTarget then
+		if GetDistance(unit) <= rRNG then
+			CastSpell(_E, VipPredTarget.x, VipPredTarget.z)
+		end
+	end
 end
 
 --TODO add hitboxes
@@ -399,11 +425,14 @@ function CastVPredR(unit)
 	end
 end
 
---TODO add VIP Prediction R
 --TODO add hitboxes
---TODO add stack check
 function CastVIPR(unit)
-
+	VipPredTarget = rp:GetPrediction(unit)
+	if rRDY and ValidTarget(unit) and StackCheck() and myHero.mana >= ManaCost(R) and VipPredTarget then
+		if GetDistance(unit) <= rRNG then
+			CastSpell(_R, VipPredTarget.x, VipPredTarget.z)
+		end
+	end
 end
 
 --[[
