@@ -6,10 +6,14 @@
 ├┴┐└┬┘  ║  ║  ║ ║║║║║║║              
 └─┘ ┴   ╚═╝╚═╝╚═╝╝╚╝╝╚╝              
 
-VERSION:	1.00
+VERSION:	1.01
 
 CHANGELOG:	VERSION 1.00
 				Initial Release
+			VERSION 1.01
+				Added packet casting for all spells
+				Minor code cleanup
+				Added SpellCheck function
 				
 		Follow me on Facebook! Its the easiest way to communicate with me.
 		CCONN's Facebook: https://www.facebook.com/CCONN81
@@ -23,7 +27,7 @@ if myHero.charName ~= "KogMaw" then return end
 
 --[[
 		Required Libs
-  ]]
+--]]
 require "Prodiction"
 require "VPrediction"
 require "FastCollision"
@@ -31,16 +35,13 @@ require "Collision"
 
 --[[
 		Variables
-  ]]
+--]]
 local Target = AutoCarry.GetAttackTarget()
 local qRNG, wRNG, eRNG, rRNG
-local qSPD, wSPD, eSPD, rSPD = 800, 0, 800, 1000
+local qSPD, wSPD, eSPD, rSPD = 800, 0, 800, 1000 --math.huge unsure
 local qDLY, wDLY, eDLY, rDLY = 0.60, 0, 0.60, 0.250
 local qWTH, wWTH, eWTH, rWTH = 80, 0, 80, 100
-local qRDY = (myHero:CanUseSpell(_Q) == READY)
-local wRDY = (myHero:CanUseSpell(_W) == READY)
-local eRDY = (myHero:CanUseSpell(_E) == READY)
-local rRDY = (myHero:CanUseSpell(_R) == READY)
+local qRDY, wRDY, eRDY, rRDY
 local Prodict = ProdictManager.GetInstance()
 local ProdictQ = Prodict:AddProdictionObject(_Q, qRNG, qSPD, qDLY, qWTH)
 local ProdictE = Prodict:AddProdictionObject(_E, eRNG, eSPD, eDLY, eWTH)
@@ -53,31 +54,42 @@ local ep = TargetPredictionVIP(eRNG, eSPD, eDLY, eWTH)
 local rp = TargetPredictionVIP(rRNG, rSPD, rDLY, rWTH)
 local stacks, timer = 0, 0
 local VP = VPrediction()
-local Version = 1.00
+local Version = 1.01
 
 function PluginOnLoad()
 	Menu()
-	qRNG, wRNG, eRNG, rRNG = AutoCarry.PluginMenu.spelloptions.qoptions.QRNG, AutoCarry.PluginMenu.spelloptions.woptions.WRNG, AutoCarry.PluginMenu.spelloptions.eoptions.ERNG, GetRRange()
-	PrintChat("Deadly KogMaw version version 1.00 by CCONN")
+	PrintChat(">> Deadly KogMaw version "..Version.." by CCONN")
+end
+
+function SpellCheck()
+	qRDY = (myHero:CanUseSpell(_Q) == READY)
+	wRDY = (myHero:CanUseSpell(_W) == READY)
+	eRDY = (myHero:CanUseSpell(_E) == READY)
+	rRDY = (myHero:CanUseSpell(_R) == READY)
+	qRNG = AutoCarry.PluginMenu.spelloptions.qoptions.QRNG
+	wRNG = AutoCarry.PluginMenu.spelloptions.woptions.WRNG
+	eRNG = AutoCarry.PluginMenu.spelloptions.eoptions.ERNG
+	rRNG = GetRRange()
 end
 
 --[[
 		Script Menu
-  ]]
+--]]
   
 function Menu()
 --[[
 		Sub Menus
-  ]]
+--]]
 	AutoCarry.PluginMenu:addSubMenu("Auto Carry", "autocarry")
 	AutoCarry.PluginMenu:addSubMenu("Mixed Mode", "mixedmode")
+	AutoCarry.PluginMenu:addSubMenu("Farm", "farm")
 	AutoCarry.PluginMenu:addSubMenu("Lane Clear", "laneclear")
 	AutoCarry.PluginMenu:addSubMenu("Spell Options", "spelloptions")
 	AutoCarry.PluginMenu:addSubMenu("Kill Steal", "killsteal")
 	AutoCarry.PluginMenu:addSubMenu("Draw", "draw")
 	AutoCarry.PluginMenu:addParam("sep", " ", SCRIPT_PARAM_INFO, "")
 	AutoCarry.PluginMenu:addParam("sep", "Deadly KogMaw by CCONN", SCRIPT_PARAM_INFO, "")
-	AutoCarry.PluginMenu:addParam("sep", "Version: 1.00", SCRIPT_PARAM_INFO, "")
+	AutoCarry.PluginMenu:addParam("sep", "Version: "..Version, SCRIPT_PARAM_INFO, "")
 	AutoCarry.PluginMenu:addParam("sep", "www.facebook.com/CCONN81", SCRIPT_PARAM_INFO, "")
 	AutoCarry.PluginMenu.spelloptions:addSubMenu("Q: Caustic Spittle", "qoptions")
 	AutoCarry.PluginMenu.spelloptions:addSubMenu("W: Bio-Arcane Barrage", "woptions")
@@ -86,31 +98,39 @@ function Menu()
 	
 --[[
 		Auto Carry Sub Menu
-  ]]
-	AutoCarry.PluginMenu.autocarry:addParam("ACuseQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
-	AutoCarry.PluginMenu.autocarry:addParam("ACuseW", "Use W", SCRIPT_PARAM_ONOFF, true)
-	AutoCarry.PluginMenu.autocarry:addParam("ACuseE", "Use E", SCRIPT_PARAM_ONOFF, true)
-	AutoCarry.PluginMenu.autocarry:addParam("ACuseR", "Use R", SCRIPT_PARAM_ONOFF, true)
+--]]
+	AutoCarry.PluginMenu.autocarry:addParam("useQ", "Q: Caustic Spittle", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.autocarry:addParam("useW", "W: Bio-Arcane Barrage", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.autocarry:addParam("useE", "E: Void Ooze", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.autocarry:addParam("useR", "R: Living Artillery", SCRIPT_PARAM_ONOFF, true)
 
 --[[
 		Mixed Mode Sub Menu
-  ]]
-	AutoCarry.PluginMenu.mixedmode:addParam("MMuseQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
-	AutoCarry.PluginMenu.mixedmode:addParam("MMuseW", "Use W", SCRIPT_PARAM_ONOFF, true)
-	AutoCarry.PluginMenu.mixedmode:addParam("MMuseE", "Use E", SCRIPT_PARAM_ONOFF, true)
-	AutoCarry.PluginMenu.mixedmode:addParam("MMuseR", "Use R", SCRIPT_PARAM_ONOFF, true)
+--]]
+	AutoCarry.PluginMenu.mixedmode:addParam("useQ", "Q: Caustic Spittle", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.mixedmode:addParam("useW", "W: Bio-Arcane Barrage", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.mixedmode:addParam("useE", "E: Void Ooze", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.mixedmode:addParam("useR", "R: Living Artillery", SCRIPT_PARAM_ONOFF, true)
+
+--[[
+		Farm Sub Menu
+--]]
+	AutoCarry.PluginMenu.farm:addParam("useQ", "Q: Caustic Spittle", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.farm:addParam("useW", "W: Bio-Arcane Barrage", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.farm:addParam("useE", "E: Void Ooze", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.farm:addParam("useR", "R: Living Artillery", SCRIPT_PARAM_ONOFF, true)
 	
 --[[
 		Lane Clear Sub Menu
-  ]]
-	AutoCarry.PluginMenu.laneclear:addParam("LCuseQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
-	AutoCarry.PluginMenu.laneclear:addParam("LCuseW", "Use W", SCRIPT_PARAM_ONOFF, true)
-	AutoCarry.PluginMenu.laneclear:addParam("LCuseE", "Use E", SCRIPT_PARAM_ONOFF, true)
-	AutoCarry.PluginMenu.laneclear:addParam("LCuseR", "Use R", SCRIPT_PARAM_ONOFF, true)
+--]]
+	AutoCarry.PluginMenu.laneclear:addParam("useQ", "Q: Caustic Spittle", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.laneclear:addParam("useW", "W: Bio-Arcane Barrage", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.laneclear:addParam("useE", "E: Void Ooze", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.laneclear:addParam("useR", "R: Living Artillery", SCRIPT_PARAM_ONOFF, true)
 	
 --[[
 		Spell Options Sub Menu
-  ]]
+--]]
 	AutoCarry.PluginMenu.spelloptions.qoptions:addParam("sep", ">> General Options <<", SCRIPT_PARAM_INFO, "")
 	AutoCarry.PluginMenu.spelloptions.qoptions:addParam("QRNG", "Range", SCRIPT_PARAM_SLICE, 1000, 0, 1000, 0)
 	AutoCarry.PluginMenu.spelloptions.qoptions:addParam("QMANA", "Mana Threshold", SCRIPT_PARAM_SLICE, 0, 0, 100, 0)
@@ -121,6 +141,7 @@ function Menu()
 	AutoCarry.PluginMenu.spelloptions.qoptions:addParam("QHitChance", "VPredict Hit Chance", SCRIPT_PARAM_SLICE, 2, 1, 5, 0)
 	AutoCarry.PluginMenu.spelloptions.qoptions:addParam("QCollision", "Choose Collision: ", SCRIPT_PARAM_LIST, 1, {"Fast Collision", "Collision"})
 	AutoCarry.PluginMenu.spelloptions.qoptions:addParam("QHitBox", "Use Hitboxes", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.spelloptions.qoptions:addParam("Packet", "Use Packets", SCRIPT_PARAM_ONOFF, true)
 	
 	AutoCarry.PluginMenu.spelloptions.woptions:addParam("sep", ">> General Options <<", SCRIPT_PARAM_INFO, "")
 	AutoCarry.PluginMenu.spelloptions.woptions:addParam("WRNG", "Range", SCRIPT_PARAM_SLICE, 710, 0, 710, 0)
@@ -136,6 +157,7 @@ function Menu()
 	AutoCarry.PluginMenu.spelloptions.eoptions:addParam("EPrediction", "Choose Prediction: ", SCRIPT_PARAM_LIST, 1, {"VPrediction", "Prodiction", "VIP Prediction"})
 	AutoCarry.PluginMenu.spelloptions.eoptions:addParam("EHitChance", "VPredict Hit Chance", SCRIPT_PARAM_SLICE, 2, 1, 5, 0)
 	AutoCarry.PluginMenu.spelloptions.eoptions:addParam("EHitBox", "Use Hitboxes", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.spelloptions.eoptions:addParam("Packet", "Use Packets", SCRIPT_PARAM_ONOFF, true)
 	
 	AutoCarry.PluginMenu.spelloptions.roptions:addParam("sep", ">> General Options <<", SCRIPT_PARAM_INFO, "")
 	AutoCarry.PluginMenu.spelloptions.roptions:addParam("sep", "Range is dynamic", SCRIPT_PARAM_INFO, "")
@@ -146,6 +168,7 @@ function Menu()
 	AutoCarry.PluginMenu.spelloptions.roptions:addParam("RPrediction", "Choose Prediction: ", SCRIPT_PARAM_LIST, 1, {"VPrediction", "Prodiction", "VIP Prediction"})
 	AutoCarry.PluginMenu.spelloptions.roptions:addParam("RHitChance", "VPredict Hit Chance", SCRIPT_PARAM_SLICE, 2, 1, 5, 0)
 	AutoCarry.PluginMenu.spelloptions.roptions:addParam("RHitBox", "Use Hitboxes", SCRIPT_PARAM_ONOFF, true)
+	AutoCarry.PluginMenu.spelloptions.roptions:addParam("Packets", "Use Packets", SCRIPT_PARAM_ONOFF, true)
 	AutoCarry.PluginMenu.spelloptions.roptions:addParam("sep", " ", SCRIPT_PARAM_INFO, "")
 	AutoCarry.PluginMenu.spelloptions.roptions:addParam("sep", ">> Stack Management <<", SCRIPT_PARAM_INFO, "")
 	AutoCarry.PluginMenu.spelloptions.roptions:addParam("RStackCheck", "Use Stack Check", SCRIPT_PARAM_ONOFF, true)
@@ -156,7 +179,7 @@ function Menu()
 	
 --[[
 		Kill Steal Sub Menu
-  ]]
+--]]
 	AutoCarry.PluginMenu.killsteal:addParam("KSEnable", "Enable Kill Steals", SCRIPT_PARAM_ONOFF, true)
 	AutoCarry.PluginMenu.killsteal:addParam("KSOverride", "Override Mana Thresholds", SCRIPT_PARAM_ONOFF, true)
 	AutoCarry.PluginMenu.killsteal:addParam("sep", ">> Kill Steal Permutations <<", SCRIPT_PARAM_INFO, "")
@@ -168,7 +191,7 @@ function Menu()
 
 --[[
 		Draw Sub Menu
-  ]]
+--]]
 	AutoCarry.PluginMenu.draw:addParam("DrawQ", "Draw Q Range", SCRIPT_PARAM_ONOFF, true)
 	AutoCarry.PluginMenu.draw:addParam("DrawW", "Draw W Range", SCRIPT_PARAM_ONOFF, true)
 	AutoCarry.PluginMenu.draw:addParam("DrawE", "Draw E Range", SCRIPT_PARAM_ONOFF, true)
@@ -178,7 +201,7 @@ end
 
 --[[
 		Draw Related
-  ]]
+--]]
 function PluginOnDraw()
 	if qRDY and AutoCarry.PluginMenu.draw.DrawQ then
 		DrawCircle(myHero.x, myHero.y, myHero.z, qRNG, 0xFFFFFF)
@@ -200,19 +223,21 @@ end
 
 --[[
 		Main Script Function
-  ]]
+--]]
 function PluginOnTick()
 	Target = AutoCarry.GetAttackTarget()
+	SpellCheck()
 	StackReset()
 	if Target and AutoCarry.MainMenu.AutoCarry then ComboAC() end
 	if Target and AutoCarry.MainMenu.MixedMode then ComboMM() end
+	if Target and AutoCarry.MainMenu.LastHit then ComboFarm() end
 	if Target and AutoCarry.MainMenu.LaneClear then ComboLC() end
 	if AutoCarry.PluginMenu.killsteal.KSEnable then KillSteal() end
 end
 
 --[[
 		Kill Steals
-  ]]
+--]]
   
 --TODO Add all permutations for kill steals
 --TODO Add mana thresholds and overrides
@@ -242,32 +267,32 @@ end
 --[[
 		Combo that is executed when
 		holding the AutoCarry hotkey
-  ]]
+--]]
   --TODO Add spell casting order
 function ComboAC()
 	local Menu1 = AutoCarry.PluginMenu.autocarry
 	local Menu2 = AutoCarry.PluginMenu.spelloptions
 	if Target then
-		if wRDY and Menu1.ACuseW and GetDistance(Target) <= GetWRange() and GetDistance(Target) <= wRNG then
+		if wRDY and Menu1.useW and GetDistance(Target) <= GetWRange() and GetDistance(Target) <= wRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.woptions.WMANA / 100) then
 				CastW(Target)
 			end
 		end
-		if eRDY and Menu1.ACuseE and GetDistance(Target) <= eRNG then
+		if eRDY and Menu1.useE and GetDistance(Target) <= eRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.eoptions.EMANA / 100) then
 				if Menu2.eoptions.EPrediction == 1 then CastVPredE(Target) end
 				if Menu2.eoptions.EPrediction == 2 then CastProdE(Target) end
 				if Menu2.eoptions.EPrediction == 3 then CastVIPE(Target) end
 			end
 		end
-		if rRDY and Menu1.ACuseR and GetDistance(Target) <= GetRRange() then 
+		if rRDY and Menu1.useR and GetDistance(Target) <= GetRRange() then 
 			if myHero.mana >= myHero.maxMana * (Menu2.roptions.RMANA / 100) then
 				if Menu2.roptions.RPrediction == 1 then CastVPredR(Target) end
 				if Menu2.roptions.RPrediction == 2 then CastProdR(Target) end
 				if Menu2.roptions.RPrediction == 3 then CastVIPR(Target) end
 			end
 		end
-		if qRDY and Menu1.ACuseQ and GetDistance(Target) <= qRNG then
+		if qRDY and Menu1.useQ and GetDistance(Target) <= qRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.qoptions.QMANA / 100) then
 				if Menu2.qoptions.QPrediction == 1 then CastVPredQ(Target) end
 				if Menu2.qoptions.QPrediction == 2 then CastProdQ(Target) end
@@ -280,32 +305,70 @@ end
 --[[
 		Combo that is executed when
 		holding the Mixed Mode hotkey
-  ]]
+--]]
   --TODO Add spell casting order
 function ComboMM()
 	local Menu1 = AutoCarry.PluginMenu.mixedmode
 	local Menu2 = AutoCarry.PluginMenu.spelloptions
 	if Target ~= nil then
-		if wRDY and Menu1.MMuseW and GetDistance(Target) <= GetWRange() and GetDistance(Target) <= wRNG then
+		if wRDY and Menu1.useW and GetDistance(Target) <= GetWRange() and GetDistance(Target) <= wRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.woptions.WMANA / 100) then
 				CastW(Target)
 			end
 		end
-		if eRDY and Menu1.MMuseE and GetDistance(Target) <= eRNG then
+		if eRDY and Menu1.useE and GetDistance(Target) <= eRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.eoptions.EMANA / 100) then
 				if Menu2.eoptions.EPrediction == 1 then CastVPredE(Target) end
 				if Menu2.eoptions.EPrediction == 2 then CastProdE(Target) end
 				if Menu2.eoptions.EPrediction == 3 then CastVIPE(Target) end
 			end
 		end
-		if rRDY and Menu1.MMuseR and GetDistance(Target) <= rRNG then
+		if rRDY and Menu1.useR and GetDistance(Target) <= rRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.roptions.RMANA / 100) then
 				if Menu2.roptions.RPrediction == 1 then CastVPredR(Target) end
 				if Menu2.roptions.RPrediction == 2 then CastProdR(Target) end
 				if Menu2.roptions.RPrediction == 3 then CastVIPR(Target) end
 			end
 		end
-		if qRDY and Menu1.MMuseQ and GetDistance(Target) <= qRNG then
+		if qRDY and Menu1.useQ and GetDistance(Target) <= qRNG then
+			if myHero.mana >= myHero.maxMana * (Menu2.qoptions.QMANA / 100) then
+				if Menu2.qoptions.QPrediction == 1 then CastVPredQ(Target) end
+				if Menu2.qoptions.QPrediction == 2 then CastProdQ(Target) end
+				if Menu2.qoptions.QPrediction == 3 then CastVIPQ(Target) end
+			end
+		end
+	end
+end
+
+--[[
+		Combo that is executed when
+		holding the Farm hotkey
+--]]
+  --TODO Add spell casting order
+function ComboFarm()
+	local Menu1 = AutoCarry.PluginMenu.farm
+	local Menu2 = AutoCarry.PluginMenu.spelloptions
+	if Target ~= nil then
+		if wRDY and Menu1.useW and GetDistance(Target) <= GetWRange() and GetDistance(Target) <= wRNG then
+			if myHero.mana >= myHero.maxMana * (Menu2.woptions.WMANA / 100) then
+				CastW(Target)
+			end
+		end
+		if eRDY and Menu1.useE and GetDistance(Target) <= eRNG then
+			if myHero.mana >= myHero.maxMana * (Menu2.eoptions.EMANA / 100) then
+				if Menu2.eoptions.EPrediction == 1 then CastVPredE(Target) end
+				if Menu2.eoptions.EPrediction == 2 then CastProdE(Target) end
+				if Menu2.eoptions.EPrediction == 3 then CastVIPE(Target) end
+			end
+		end
+		if rRDY and Menu1.useR and GetDistance(Target) <= rRNG then
+			if myHero.mana >= myHero.maxMana * (Menu2.roptions.RMANA / 100) then
+				if Menu2.roptions.RPrediction == 1 then CastVPredR(Target) end
+				if Menu2.roptions.RPrediction == 2 then CastProdR(Target) end
+				if Menu2.roptions.RPrediction == 3 then CastVIPR(Target) end
+			end
+		end
+		if qRDY and Menu1.useQ and GetDistance(Target) <= qRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.qoptions.QMANA / 100) then
 				if Menu2.qoptions.QPrediction == 1 then CastVPredQ(Target) end
 				if Menu2.qoptions.QPrediction == 2 then CastProdQ(Target) end
@@ -318,7 +381,7 @@ end
 --[[
 		Combo that is executed when
 		holding the Lane Clear hotkey
-  ]]
+--]]
   --TODO Add spell casting order
 function ComboLC()
 	local Menu1 = AutoCarry.PluginMenu.laneclear
@@ -329,21 +392,21 @@ function ComboLC()
 				CastW(Target)
 			end
 		end
-		if eRDY and Menu1.LCuseE and GetDistance(Target) <= eRNG then
+		if eRDY and Menu1.useE and GetDistance(Target) <= eRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.eoptions.EMANA / 100) then
 				if Menu2.eoptions.EPrediction == 1 then CastVPredE(Target) end
 				if Menu2.eoptions.EPrediction == 2 then CastProdE(Target) end
 				if Menu2.eoptions.EPrediction == 3 then CastVIPE(Target) end
 			end
 		end
-		if rRDY and Menu1.LCuseR and GetDistance(Target) <= rRNG then
+		if rRDY and Menu1.useR and GetDistance(Target) <= rRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.roptions.RMANA / 100) then
 				if Menu2.roptions.RPrediction == 1 then CastVPredR(Target) end
 				if Menu2.roptions.RPrediction == 2 then CastProdR(Target) end
 				if Menu2.roptions.RPrediction == 3 then CastVIPR(Target) end
 			end
 		end
-		if qRDY and Menu1.LCuseQ and GetDistance(Target) <= qRNG then
+		if qRDY and Menu1.useQ and GetDistance(Target) <= qRNG then
 			if myHero.mana >= myHero.maxMana * (Menu2.qoptions.QMANA / 100) then
 				if Menu2.qoptions.QPrediction == 1 then CastVPredQ(Target) end
 				if Menu2.qoptions.QPrediction == 2 then CastProdQ(Target) end
@@ -360,10 +423,19 @@ function CastProdQ(unit)
 		if QPos ~= nil then
 			if AutoCarry.PluginMenu.spelloptions.qoptions.QCollision == 1 then
 				local willCollide = ProdictQFastCol:GetMinionCollision(QPos, myHero)
-				if not willCollide then CastSpell(_Q, QPos.x, QPos.z) end
+				if not willCollide then
+					if AutoCarry.PluginMenu.spelloptions.qoptions.Packet then
+						Packet("S_CAST", {spellId = _Q, fromX =  QPos.x, fromY =  QPos.z, toX =  QPos.x, toY =  QPos.z}):send()
+					else
+						CastSpell(_Q, QPos.x, QPos.z) end
+					end
 			elseif AutoCarry.PluginMenu.spelloptions.qoptions.QCollision == 2 then
 				local willCollide = ProdictQCol:GetMinionCollision(QPos, myHero)
-				if not willCollide then CastSpell(_Q, Qpos.x, QPos.z) end
+				if not willCollide then
+					Packet("S_CAST", {spellId = _Q, fromX =  QPos.x, fromY =  QPos.z, toX =  QPos.x, toY =  QPos.z}):send()
+				else
+					CastSpell(_Q, Qpos.x, QPos.z)
+				end
 			end
 		end
 	end
@@ -374,7 +446,11 @@ function CastVPredQ(unit)
 	if qRDY and ValidTarget(unit) and myHero.mana >= ManaCost(Q) then
 		local CastPosition, HitChance, Position = VP:GetLineCastPosition(unit, qDLY, qWTH, qRNG, qSPD, myHero, true)
 		if HitChance >= AutoCarry.PluginMenu.spelloptions.qoptions.QHitChance and GetDistance(CastPosition) <= qRNG then
-			CastSpell(_Q, CastPosition.x, CastPosition.z)
+			if AutoCarry.PluginMenu.spelloptions.qoptions.Packet then
+				Packet("S_CAST", {spellId = _Q, fromX =  CastPosition.x, fromY =  CastPosition.z, toX =  CastPosition.x, toY =  CastPosition.z}):send()
+			else
+				CastSpell(_Q, CastPosition.x, CastPosition.z)
+			end
 		end
 	end
 end
@@ -386,7 +462,11 @@ function CastVIPQ(unit)
 		local QColl = (Collision(qRNG, qSPD, qDLY, qWTH))
 		local willCollide = QColl:GetMinionCollision(unit, myHero)
 		if not willCollide and GetDistance(unit) <= qRNG then
-			CastSpell(_Q, VipPredTarget.x, VipPredTarget.z)
+			if AutoCarry.PluginMenu.spelloptions.qoptions.Packet then
+				Packet("S_CAST", {spellId = _Q, fromX =  VipPredTarget.x, fromY =  VipPredTarget.z, toX =  VipPredTarget.x, toY =  VipPredTarget.z}):send()
+			else
+				CastSpell(_Q, VipPredTarget.x, VipPredTarget.z)
+			end
 		end
 	end
 end
@@ -402,7 +482,11 @@ function CastProdE(unit)
 	if eRDY and ValidTarget(unit) and myHero.mana >= ManaCost(E) then
 		EPos = ProdictE:GetPrediction(unit)
 		if EPos ~= nil then
-			CastSpell(_E, EPos.x, EPos.z)
+			if AutoCarry.PluginMenu.spelloptions.eoptions.Packet then
+				Packet("S_CAST", {spellId = _E, fromX =  EPos.x, fromY =  EPos.z, toX =  EPos.x, toY =  EPos.z}):send()
+			else
+				CastSpell(_E, EPos.x, EPos.z)
+			end
 		end
 	end
 end
@@ -412,7 +496,11 @@ function CastVPredE(unit)
 	if eRDY and ValidTarget(unit) and myHero.mana >= ManaCost(E) then
 		local CastPosition, HitChance, Position = VP:GetLineCastPosition(unit, eDLY, eWTH, eRNG, eSPD, myHero, false)
 		if HitChance >= AutoCarry.PluginMenu.spelloptions.eoptions.EHitChance and GetDistance(CastPosition) <= eRNG then
-			CastSpell(_E, CastPosition.x, CastPosition.z)
+			if AutoCarry.PluginMenu.spelloptions.eoptions.Packet then
+				Packet("S_CAST", {spellId = _E, fromX =  CastPosition.x, fromY =  CastPosition.z, toX =  CastPosition.x, toY =  CastPosition.z}):send()
+			else
+				CastSpell(_E, CastPosition.x, CastPosition.z)
+			end
 		end
 	end
 end
@@ -422,7 +510,11 @@ function CastVIPE(unit)
 	VipPredTarget = ep:GetPrediction(unit)
 	if eRDY and ValidTarget(unit) and myHero.mana >= ManaCost(E) and VipPredTarget then
 		if GetDistance(unit) <= rRNG then
-			CastSpell(_E, VipPredTarget.x, VipPredTarget.z)
+			if AutoCarry.PluginMenu.spelloptions.eoptions.Packet then
+				Packet("S_CAST", {spellId = _E, fromX =  VipPredTarget.x, fromY =  VipPredTarget.z, toX =  VipPredTarget.x, toY =  VipPredTarget.z}):send()
+			else
+				CastSpell(_E, VipPredTarget.x, VipPredTarget.z)
+			end
 		end
 	end
 end
@@ -432,7 +524,11 @@ function CastProdR(unit)
 	if rRDY and ValidTarget(unit) and StackCheck() and myHero.mana >= ManaCost(R) then
 		RPos = ProdictR:GetPrediction(unit)
 		if RPos ~= nil then
-			CastSpell(_R, RPos.x, RPos.z)
+			if AutoCarry.PluginMenu.spelloptions.roptions.Packet then
+				Packet("S_CAST", {spellId = _R, fromX =  RPos.x, fromY =  RPos.z, toX =  RPos.x, toY =  RPos.z}):send()
+			else
+				CastSpell(_R, RPos.x, RPos.z)
+			end
 		end
 	end
 end
@@ -442,7 +538,11 @@ function CastVPredR(unit)
 	if rRDY and ValidTarget(unit) and StackCheck() and myHero.mana >= ManaCost(R) then
 		local CastPosition, HitChance, Position = VP:GetCircularCastPosition(unit, rDLY, rWTH, rRNG, rSPD, myHero, false)
 		if HitChance >= AutoCarry.PluginMenu.spelloptions.roptions.RHitChance and GetDistance(CastPosition) <= rRNG then
-			CastSpell(_R, CastPosition.x, CastPosition.z)
+			if AutoCarry.PluginMenu.spelloptions.roptions.Packet then
+				Packet("S_CAST", {spellId = _R, fromX =  CastPosition.x, fromY =  CastPosition.z, toX =  CastPosition.x, toY =  CastPosition.z}):send()
+			else
+				CastSpell(_R, CastPosition.x, CastPosition.z)
+			end
 		end
 	end
 end
@@ -452,7 +552,11 @@ function CastVIPR(unit)
 	VipPredTarget = rp:GetPrediction(unit)
 	if rRDY and ValidTarget(unit) and StackCheck() and myHero.mana >= ManaCost(R) and VipPredTarget then
 		if GetDistance(unit) <= rRNG then
-			CastSpell(_R, VipPredTarget.x, VipPredTarget.z)
+			if AutoCarry.PluginMenu.spelloptions.roptions.Packet then
+				Packet("S_CAST", {spellId = _R, fromX =  VipPredTarget.x, fromY =  VipPredTarget.z, toX =  VipPredTarget.x, toY =  VipPredTarget.z}):send()
+			else
+				CastSpell(_R, VipPredTarget.x, VipPredTarget.z)
+			end
 		end
 	end
 end
@@ -460,7 +564,7 @@ end
 --[[
 		Returns mana cost
 		of spells
-  ]]
+--]]
 function ManaCost(spell)
 	if spell == Q then
 		return 60
@@ -475,7 +579,7 @@ end
 --[[
 		Calculates and returns the current
 		range of KogMaw's Ultimate
-  ]]
+--]]
 function GetRRange()
 	if myHero:GetSpellData(_R).level == 1 then
 		return 1400
@@ -491,7 +595,7 @@ end
 --[[
 		Calculates and returns the current
 		range increase of KogMaw's W
-  ]]
+--]]
 function GetWRange()
 	if myHero:GetSpellData(_W).level == 1 then
 		return 630
@@ -511,7 +615,7 @@ end
 --[[
 		Counts the current stacks of
 		KogMaw's ultimate
-  ]]
+--]]
 function PluginOnProcessSpell(unit, spell)
 	if unit.isMe and spell.name:lower():find("kogmawlivingartillery") then
 		stacks = stacks + 1
@@ -522,7 +626,7 @@ end
 --[[
 		Checks current stacks of ultimate
 		returns boolean
-  ]]
+--]]
 function StackCheck()
 	if (myHero.level > 5 and myHero.level < 12 and stacks < AutoCarry.PluginMenu.spelloptions.roptions.RStack1)
 	or (myHero.level > 11 and myHero.level < 18 and stacks < AutoCarry.PluginMenu.spelloptions.roptions.RStack2)
@@ -534,7 +638,7 @@ end
 --[[
 		Resets ultimate stacks after
 		6 seconds since last casting
-  ]]
+--]]
 function StackReset()
 	if GetTickCount() > timer + 6500 then 
 		stacks = 0
