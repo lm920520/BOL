@@ -315,9 +315,9 @@ function ComboAC()
 		end
 		if rRDY and Menu1.useR and GetDistance(Target) <= rRNG then 
 			if myHero.mana >= myHero.maxMana * (Menu2.roptions.MANA / 100) then
-				if Menu2.roptions.RPrediction == 1 then CastVPredR(Target) end
-				if Menu2.roptions.RPrediction == 2 then CastProdR(Target) end
-				if Menu2.roptions.RPrediction == 3 then CastVIPR(Target) end
+				if Menu2.roptions.Prediction == 1 then CastVPredR(Target) end
+				if Menu2.roptions.Prediction == 2 then CastProdR(Target) end
+				if Menu2.roptions.Prediction == 3 then CastVIPR(Target) end
 			end
 		end
 	end
@@ -380,9 +380,9 @@ function ComboFarm()
 		end
 		if rRDY and Menu1.useR and GetDistance(Target) <= rRNG then 
 			if myHero.mana >= myHero.maxMana * (Menu2.roptions.MANA / 100) then
-				if Menu2.roptions.RPrediction == 1 then CastVPredR(Target) end
-				if Menu2.roptions.RPrediction == 2 then CastProdR(Target) end
-				if Menu2.roptions.RPrediction == 3 then CastVIPR(Target) end
+				if Menu2.roptions.Prediction == 1 then CastVPredR(Target) end
+				if Menu2.roptions.Prediction == 2 then CastProdR(Target) end
+				if Menu2.roptions.Prediction == 3 then CastVIPR(Target) end
 			end
 		end
 	end
