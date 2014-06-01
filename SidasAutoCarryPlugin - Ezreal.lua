@@ -539,27 +539,27 @@ function Combo(unit, menu)
 		if SpellReady.Q and Menu1.useQ then
 			if GetDistance(unit) <= SpellQ.Range then
 				if myHero.mana >= myHero.maxMana * (Menu2.qoptions.MANA / 100) then
-					if Menu2.qoptions.QPrediction == 1 then CastVPredQ(Target) end
-					if Menu2.qoptions.QPrediction == 2 then CastProdQ(Target) end
-					if Menu2.qoptions.QPrediction == 3 then CastVIPQ(Target) end
+					if Menu2.qoptions.Prediction == 1 then CastVPredQ(Target) end
+					if Menu2.qoptions.Prediction == 2 then CastProdQ(Target) end
+					if Menu2.qoptions.Prediction == 3 then CastVIPQ(Target) end
 				end
 			end
 		end
 		if SpellReady.W and Menu1.useW and GetDistance(Target) <= SpellW.Range then
 			if not Menu2.woptions.Reset then
 				if myHero.mana >= myHero.maxMana * (Menu2.woptions.MANA / 100) then
-					if Menu2.eoptions.Prediction == 1 then CastVPredW(Target) end
-					if Menu2.eoptions.Prediction == 2 then CastProdW(Target) end
-					if Menu2.eoptions.Prediction == 3 then CastVIPW(Target) end
+					if Menu2.woptions.Prediction == 1 then CastVPredW(Target) end
+					if Menu2.woptions.Prediction == 2 then CastProdW(Target) end
+					if Menu2.woptions.Prediction == 3 then CastVIPW(Target) end
 				end
 			end
 		end
 		if SpellReady.R and Menu1.useR then
 			if GetDistance(Target) <= SpellR.Range then
 				if myHero.mana >= myHero.maxMana * (Menu2.roptions.MANA / 100) then
-					if Menu2.roptions.RPrediction == 1 then CastVPredR(Target) end
-					if Menu2.roptions.RPrediction == 2 then CastProdR(Target) end
-					if Menu2.roptions.RPrediction == 3 then CastVIPR(Target) end
+					if Menu2.roptions.Prediction == 1 then CastVPredR(Target) end
+					if Menu2.roptions.Prediction == 2 then CastProdR(Target) end
+					if Menu2.roptions.Prediction == 3 then CastVIPR(Target) end
 				end
 			end
 		end
